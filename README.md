@@ -101,7 +101,7 @@ audit_no_hallucination.py 末端独立审计：
 在终端启动 Claude Code 或 Codex，直接说：
 
 ```
-请帮我安装这个 Skill：https://github.com/Haojae/scipilot-cite.git
+请帮我安装这个 Skill：https://github.com/Haojae/scipilot-cite-skill.git
 ```
 
 AI 会自动 `git clone` 到正确目录（`~/.claude/skills/` 或 `~/.codex/skills/`），并提示你装 Python 依赖。
@@ -109,7 +109,7 @@ AI 会自动 `git clone` 到正确目录（`~/.claude/skills/` 或 `~/.codex/ski
 #### 方式 B：手动 clone
 
 ```bash
-git clone https://github.com/Haojae/scipilot-cite.git ~/.claude/skills/scipilot-cite-skill
+git clone https://github.com/Haojae/scipilot-cite-skill.git ~/.claude/skills/scipilot-cite-skill
 pip install -r ~/.claude/skills/scipilot-cite-skill/requirements.txt
 ```
 
@@ -344,7 +344,7 @@ Once collected, the Skill **repeats every parameter back** and waits for an expl
 Open Claude Code or Codex in your terminal and just type:
 
 ```
-Please install this Skill for me: https://github.com/Haojae/scipilot-cite.git
+Please install this Skill for me: https://github.com/Haojae/scipilot-cite-skill.git
 ```
 
 The agent will `git clone` into the right directory (`~/.claude/skills/` or `~/.codex/skills/`) and prompt you for the Python deps.
@@ -352,7 +352,7 @@ The agent will `git clone` into the right directory (`~/.claude/skills/` or `~/.
 #### Option B: Manual clone
 
 ```bash
-git clone https://github.com/Haojae/scipilot-cite.git ~/.claude/skills/scipilot-cite-skill
+git clone https://github.com/Haojae/scipilot-cite-skill.git ~/.claude/skills/scipilot-cite-skill
 pip install -r ~/.claude/skills/scipilot-cite-skill/requirements.txt
 ```
 
