@@ -4,33 +4,66 @@
 
 ---
 
-## Stage 0：信息收集
+## Stage 0：信息收集（主动逐项询问）
 
 ### 目的
-在任何 API 调用前，与用户对齐全部参数。**绝不在缺参数的情况下默默假设**。
+在任何 API 调用前，与用户对齐全部参数。**禁止在缺参数情况下默默假设**。
 
-### 必须问到的字段
+### 询问顺序与字段
+
+#### A. 输入模式（最先问）
+
+| 字段 | 取值 | 说明 |
+|---|---|---|
+| `input_mode` | `A` 或 `B` | A = 论文文件插入引用；B = 给一段话/观点输出文献支撑列表 |
+
+#### B. 基础参数（两种模式都必问）
 
 | 字段 | 默认值 | 说明 |
 |---|---|---|
-| `paper_path` | 无 | 用户提供 .tex 或 .docx |
-| `target_count` | 用户答 | 5–30 篇之间 |
-| `style` | `ieee` | 选 ieee / apa7 / nature / vancouver / gb-t-7714 / custom |
+| `target_object` | 无 | 模式 A: .tex/.docx 路径；模式 B: 用户粘贴的文字片段 |
+| `target_count` | 用户答 | 5-30；模式 B 通常 5-15 |
+| `style` | `ieee` | ieee / apa7 / nature / vancouver / gb-t-7714 / custom |
+
+#### C. 检索范围（必问，告知默认）
+
+| 字段 | 默认值 | 说明 |
+|---|---|---|
 | `year_range` | 近 5 年 | 基于当前日期动态计算 |
-| `include_preprint` | `False` | 默认排除 arXiv 等 |
-| `must_cite_papers` | 空 | 用户指定必须引用的论文 |
-| `preferred_venues` | 空 | 偏好期刊/会议 |
-| `keywords` | 自动提取 | 用户可补充 |
+| `include_preprint` | `False` | 默认排除 arXiv / bioRxiv 等 |
 
-### 输出
-向用户口头复述全部参数后再进入 Stage 1。复述格式示例：
+#### D. 插入位置（仅模式 A 必问）
 
-> 我将为你的 `paper.tex` 检索 **15 篇** `IEEE` 格式的 **2021–2026** 年文献，**不含预印本**。
-> 关键词：`large language model`、`alignment`、`RLHF`。开始？
+| 字段 | 默认值 | 说明 |
+|---|---|---|
+| `target_sections` | 自动判断 | 用户可指定列表如 `["Introduction", "Related Work"]` 或排除列表 |
+
+#### E. 质量与偏好（主动询问，用户可逐项跳过）
+
+| 字段 | 默认值 | 说明 |
+|---|---|---|
+| `must_cite_papers` | 空 | 必引论文（必须含 DOI 或完整元数据，禁止编造） |
+| `preferred_venues` | 空 | 偏好期刊/会议列表 |
+| `excluded_venues` | 空 | 排除的 venue |
+| `journal_tier` | 不限 | `Q1` / `Q1Q2` / `cas1` / `cas12` / `none`；基于 LLM 软过滤，非权威 |
+| `preferred_authors` | 空 | 偏好作者/课题组 |
+| `excluded_authors` | 空 | 排除作者（如自引） |
+| `preferred_affiliations` | 空 | 偏好机构（MIT/清华等） |
+| `excluded_affiliations` | 空 | 排除机构 |
+| `extra_keywords` | 空 | 自动抽取之外用户补充的关键词 |
+
+### 复述确认
+收齐后必须向用户口头复述所有参数并请求确认。例：
+
+> 处理 **paper.tex**（模式 A），在 **Introduction + Related Work** 中插入
+> **15 篇 IEEE 格式**文献，**2022-2026**，**不含预印本**，**JCR Q1**，
+> 含 **MIT/清华** 机构。必引 **[DOI: 10.1038/s41586-024-07421-0]**。开始？
 
 ### 异常
-- 用户文件未提供 → 等待，不进入下一步
-- 用户给的数量 >40 或 <3 → 提醒并请求确认
+- 用户输入模式不明 → 二选一确认
+- 文件 / 片段未提供 → 等待
+- 数量 >40 或 <3 → 提醒并请求确认
+- 用户要求严格分区控制但未提供期刊白名单 → 告知"基于 LLM 软过滤、非权威"，请求是否继续
 
 ---
 

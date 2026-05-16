@@ -1,7 +1,7 @@
-# SciPilot-cite
+# SciPilot-cite-skill
 
-> SciPilot family. Citation copilot for academic writing.
-> SciPilot 家族成员 — 学术写作的引用副驾驶。
+> SciPilot Skills family. Citation copilot for academic writing.
+> SciPilot Skills 家族成员 — 学术写作的引用副驾驶。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.9+](https://img.shields.io/badge/Python-3.9%2B-3776AB.svg)](#dependencies--依赖)
@@ -21,7 +21,14 @@ A [Claude Code](https://claude.com/claude-code) / [Codex](https://github.com/ope
 
 ### 概览
 
-`scipilot-cite` 解决学术写作中最容易出错也最伤诚信的环节 —— **引用**。它读取你的 `.tex` 或 `.docx` 论文，通过 **Semantic Scholar + OpenAlex + Crossref** 三源并行检索近年高引文献，对每篇候选执行 **DOI 解析 + 多源交叉验证**，把无法验证的全部丢弃，按你指定的格式（IEEE / APA 7 / Nature / Vancouver / GB/T 7714）将引用插入正文对应位置并生成 References 章节。
+`scipilot-cite-skill` 解决学术写作中最容易出错也最伤诚信的环节 —— **引用**。支持两种输入：
+
+- **模式 A — 论文模式**：读取你的 `.tex` 或 `.docx` 论文，在正文对应章节插入引用 + 生成 References
+- **模式 B — 片段模式**：你给一段话或一个观点，输出能支撑它的真实文献列表（不动文档）
+
+两种模式都通过 **Semantic Scholar + OpenAlex + Crossref** 三源并行检索近年高引文献，对每篇候选执行 **DOI 解析 + 多源交叉验证**，把无法验证的全部丢弃，按你指定的格式（IEEE / APA 7 / Nature / Vancouver / GB/T 7714）输出。
+
+**Stage 0 主动询问 12 项参数**：输入模式、文献数量、引用格式、年限、目标章节、必引论文、期刊偏好、**期刊分区**（Q1 / 中科院 1-2 区）、**作者偏好**、**作者单位偏好**、是否含预印本、额外关键词。不会默默用默认值。
 
 **核心承诺：**
 - 一篇都不编造 — 验证失败的文献直接丢弃，宁缺毋滥
@@ -33,7 +40,7 @@ A [Claude Code](https://claude.com/claude-code) / [Codex](https://github.com/ope
 
 大多数 LLM 写引用的助手把"不编造"写在提示词里，然后祈祷模型遵守。这在长上下文、API 失败、用户施压等情境下经常崩溃——典型表现是**真期刊+假页码、真作者+假 DOI 的"高仿"引用**，连资深审稿人都很难一眼识破。
 
-scipilot-cite 把"不编造"从**口号**升级成**机器可证伪的契约**。具体做法：
+scipilot-cite-skill 把"不编造"从**口号**升级成**机器可证伪的契约**。具体做法：
 
 ```
 search_papers.py  →  写 evidence_log.jsonl   （每篇 API 响应都落盘）
@@ -58,6 +65,20 @@ audit_no_hallucination.py 末端独立审计：
 | 真期刊 + 编造的 page/volume | DOI 解析返回真元数据，比对发现不一致 → MISMATCH → FAIL |
 
 这就是 README 顶部那个红色 badge `Hallucination Audited: Gate 8` 的意义——它不只是装饰，对应的是工程上 `scripts/audit_no_hallucination.py` 里**真正会跑、真正会 exit 2、真正会阻止交付**的代码。
+
+### Stage 0 主动询问机制（12 项参数）
+
+很多 AI 引用工具默认填一组参数就开始干，结果出来的引用对不上用户预期。`scipilot-cite-skill` 把 Stage 0 设计成**强制对齐**阶段——不获得用户明确确认就不进入检索。具体询问：
+
+| 类别 | 询问项 | 备注 |
+|---|---|---|
+| 输入模式 | 模式 A（论文）/ 模式 B（片段） | 最先问 |
+| 基础参数 | 目标对象 / 文献数量 / 引用格式 | 必问 |
+| 检索范围 | 年份 / 是否含预印本 | 告知默认 |
+| 插入位置 | 目标章节（仅模式 A） | 默认自动判断 |
+| 质量偏好 | 必引论文 / 期刊会议 / **期刊分区** / **作者偏好** / **作者单位** / 额外关键词 | 用户可逐项跳过 |
+
+收齐后向用户**口头复述全部参数**，等待"开始"确认。
 
 ### 核心特性
 
@@ -88,8 +109,8 @@ AI 会自动 `git clone` 到正确目录（`~/.claude/skills/` 或 `~/.codex/ski
 #### 方式 B：手动 clone
 
 ```bash
-git clone https://github.com/Haojae/scipilot-cite.git ~/.claude/skills/scipilot-cite
-pip install -r ~/.claude/skills/scipilot-cite/requirements.txt
+git clone https://github.com/Haojae/scipilot-cite.git ~/.claude/skills/scipilot-cite-skill
+pip install -r ~/.claude/skills/scipilot-cite-skill/requirements.txt
 ```
 
 Codex 用户把目标目录换成 `~/.codex/skills/`，Cursor 用户换成 `.cursor/skills/`。
@@ -97,7 +118,7 @@ Codex 用户把目标目录换成 `~/.codex/skills/`，Cursor 用户换成 `.cur
 #### 方式 C：下载 ZIP
 
 1. 在 GitHub 仓库页面点 `Code` → `Download ZIP`
-2. 解压到 `~/.claude/skills/scipilot-cite/`
+2. 解压到 `~/.claude/skills/scipilot-cite-skill/`
 3. `pip install -r requirements.txt`
 
 ### 使用
@@ -106,21 +127,35 @@ Codex 用户把目标目录换成 `~/.codex/skills/`，Cursor 用户换成 `.cur
 
 启动 Claude Code 后随便用一句中文或英文：
 
+**模式 A — 论文插入**：
+
 ```
-帮我的 paper.tex 加 15 篇参考文献，用 IEEE 格式。
+帮我的 paper.tex 加 15 篇参考文献，用 IEEE 格式，
+只在 Introduction 和 Related Work 章节加。
 ```
 
 ```
-搜索 large language model alignment 相关近 3 年高引论文，
-排除预印本，用 Nature 格式插入到 manuscript.docx。
+读取 thesis.tex，补充 10 篇 GB/T 7714 格式引用，
+只要中科院 1-2 区期刊，排除预印本。
+```
+
+**模式 B — 片段支撑**（新）：
+
+```
+我有这段话需要文献支撑：
+"近年来基于扩散模型的图像生成方法在医学影像合成上
+取得显著进展，能够缓解小样本数据稀缺问题。"
+帮我找 8 篇 2022-2026 的近年高引文献，IEEE 格式，
+偏好 MIT/Stanford/清华的工作。
 ```
 
 ```
-读取 thesis.tex，在 Related Work 部分补充 10 篇引用，
-按 GB/T 7714 格式。
+这个观点有文献支撑吗：
+"LLM 通过 RLHF 训练能显著降低有害输出。"
+找 5 篇 Nature/Science/NeurIPS 顶刊文献。
 ```
 
-Skill 会在 Stage 0 逐项确认参数（论文文件 / 篇数 / 格式 / 年限 / 预印本 / 特殊要求），全部确认后再开始检索 → 验证 → 插入。**关键决策点会等你拍板**。
+Skill 会在 Stage 0 主动询问 12 项参数（见上节），全部确认后再开始检索 → 验证 → 输出。**关键决策点会等你拍板**。
 
 #### 2. 命令行直接调脚本
 
@@ -195,16 +230,16 @@ Stage 3 完成只是初筛。**真正的最终防线是 Stage 7 第 0 项的 Gat
 
 完整格式规范、模板、真实示例见 [`references/citation-formats.md`](references/citation-formats.md)。
 
-### SciPilot 家族
+### SciPilot Skills 家族
 
 | Skill | 状态 | 功能 |
 |---|---|---|
-| **scipilot-cite** | v1.0.0 (本仓库) | 文献检索与引用插入 |
-| scipilot-polish | 规划中 | 学术论文润色 |
-| scipilot-review | 规划中 | AI 模拟审稿 |
-| scipilot-figure | 规划中 | 科研图表生成 |
-| scipilot-submit | 规划中 | 投稿格式适配 |
-| scipilot-read | 规划中 | 论文阅读与翻译 |
+| **scipilot-cite-skill** | v1.0.0 (本仓库) | 文献检索与引用插入 |
+| scipilot-polish-skill | 规划中 | 学术论文润色 |
+| scipilot-review-skill | 规划中 | AI 模拟审稿 |
+| scipilot-figure-skill | 规划中 | 科研图表生成 |
+| scipilot-submit-skill | 规划中 | 投稿格式适配 |
+| scipilot-read-skill | 规划中 | 论文阅读与翻译 |
 
 家族成员共享四条设计原则：
 1. **AI 是副驾驶**：关键决策点等用户拍板
@@ -229,7 +264,14 @@ Stage 3 完成只是初筛。**真正的最终防线是 Stage 7 第 0 项的 Gat
 
 ### Overview
 
-`scipilot-cite` solves one of the most error-prone (and integrity-sensitive) parts of academic writing — **citations**. Hand it a `.tex` or `.docx` manuscript and it will search recent high-citation papers across **Semantic Scholar + OpenAlex + Crossref** in parallel, run each candidate through **DOI resolution + multi-source cross-check**, drop everything that fails verification, then insert the survivors into your prose at the right spots and build the References section in the style you choose (**IEEE / APA 7 / Nature / Vancouver / GB/T 7714**).
+`scipilot-cite-skill` solves one of the most error-prone (and integrity-sensitive) parts of academic writing — **citations**. Two input modes:
+
+- **Mode A — manuscript mode**: read a `.tex` or `.docx` paper and insert citations into the right sections, with a References list at the end
+- **Mode B — snippet mode**: paste a paragraph or a viewpoint, get back a verified reference list that supports the claim (no document modification)
+
+Both modes parallel-search recent high-citation papers across **Semantic Scholar + OpenAlex + Crossref**, run each candidate through **DOI resolution + multi-source cross-check**, drop everything that fails verification, and output in your chosen style (**IEEE / APA 7 / Nature / Vancouver / GB/T 7714**).
+
+**Stage 0 actively asks 12 parameters**: input mode, count, citation style, year range, target sections, must-cite DOIs, venue preferences, **journal tier** (JCR Q1 / 中科院 1-2 区), **author preferences**, **author-affiliation preferences**, preprint policy, extra keywords. No silent defaults.
 
 **Core guarantees:**
 - Never fabricates a reference — failed candidates are discarded, not invented
@@ -241,7 +283,7 @@ Stage 3 完成只是初筛。**真正的最终防线是 Stage 7 第 0 项的 Gat
 
 Most LLM citation assistants write "do not fabricate" into the system prompt and pray. That breaks down under long contexts, partial API failures, or user pressure — the typical failure is the **real-journal-with-fake-page-numbers / real-author-with-fake-DOI hybrid** that fools even expert reviewers.
 
-scipilot-cite promotes "never fabricates" from a **slogan** to a **machine-checkable contract**:
+scipilot-cite-skill promotes "never fabricates" from a **slogan** to a **machine-checkable contract**:
 
 ```
 search_papers.py  →  writes evidence_log.jsonl       (every API response logged)
@@ -266,6 +308,20 @@ audit_no_hallucination.py — independent end-of-pipeline audit:
 | Real journal name + fabricated page or volume | DOI resolution returns the true metadata; comparison flags inconsistency → MISMATCH → FAIL |
 
 The red `Hallucination Audited: Gate 8` badge at the top of this README is not decoration — it points to `scripts/audit_no_hallucination.py`, which is the code that actually runs, actually exits with code 2, and actually refuses to deliver if any citation lacks provenance.
+
+### Stage 0: active questioning (12 parameters)
+
+Most AI citation tools fill in defaults and start searching, leaving the user surprised at what comes back. `scipilot-cite-skill` makes Stage 0 a hard alignment step — no parameter, no search.
+
+| Category | Asked | Notes |
+|---|---|---|
+| Input mode | Mode A (paper) / Mode B (snippet) | Asked first |
+| Basics | target file / count / citation style | Always asked |
+| Search scope | year range / preprint policy | Defaults disclosed |
+| Target sections | which sections to cite into (Mode A only) | Defaults to auto-detect |
+| Quality / preferences | must-cite DOIs / venue preferences / **journal tier** / **author preferences** / **author affiliations** / extra keywords | User may skip per item |
+
+Once collected, the Skill **repeats every parameter back** and waits for an explicit "go".
 
 ### Key Features
 
@@ -296,8 +352,8 @@ The agent will `git clone` into the right directory (`~/.claude/skills/` or `~/.
 #### Option B: Manual clone
 
 ```bash
-git clone https://github.com/Haojae/scipilot-cite.git ~/.claude/skills/scipilot-cite
-pip install -r ~/.claude/skills/scipilot-cite/requirements.txt
+git clone https://github.com/Haojae/scipilot-cite.git ~/.claude/skills/scipilot-cite-skill
+pip install -r ~/.claude/skills/scipilot-cite-skill/requirements.txt
 ```
 
 Codex users: target `~/.codex/skills/`. Cursor users: target `.cursor/skills/`.
@@ -305,7 +361,7 @@ Codex users: target `~/.codex/skills/`. Cursor users: target `.cursor/skills/`.
 #### Option C: Download ZIP
 
 1. Click `Code` → `Download ZIP` on the GitHub page
-2. Extract into `~/.claude/skills/scipilot-cite/`
+2. Extract into `~/.claude/skills/scipilot-cite-skill/`
 3. `pip install -r requirements.txt`
 
 ### Usage
@@ -314,21 +370,35 @@ Codex users: target `~/.codex/skills/`. Cursor users: target `.cursor/skills/`.
 
 Inside Claude Code, plain prose in English or Chinese:
 
+**Mode A — insert into a manuscript**:
+
 ```
-Add 15 references to my paper.tex in IEEE format.
+Add 15 references to my paper.tex in IEEE format,
+only into the Introduction and Related Work sections.
 ```
 
 ```
-Find recent (last 3 years) high-citation papers on large language model
-alignment, exclude preprints, insert them into manuscript.docx in Nature style.
+Read thesis.tex, add 10 citations in GB/T 7714 format,
+prefer journals in JCR Q1, exclude preprints.
+```
+
+**Mode B — support a viewpoint (new)**:
+
+```
+I have this paragraph and want supporting references:
+"Diffusion-based methods have made notable progress in medical
+image synthesis, mitigating small-sample limitations."
+Find 8 recent (2022-2026) high-citation papers in IEEE format,
+prefer work from MIT / Stanford / Tsinghua.
 ```
 
 ```
-Read thesis.tex, add 10 citations to the Related Work section in
-GB/T 7714 format.
+Is this claim well-supported in the literature?
+"RLHF significantly reduces harmful outputs of LLMs."
+Find 5 citations from Nature / Science / NeurIPS.
 ```
 
-The Skill confirms all parameters in Stage 0 (paper file / count / style / year range / preprint policy / special requirements) before running the search → verify → insert pipeline. **It waits for your sign-off at every decision point.**
+The Skill confirms all 12 parameters in Stage 0 (see above) before running search → verify → output. **It waits for your sign-off at every decision point.**
 
 #### 2. Standalone CLI
 
@@ -402,16 +472,16 @@ Stage 3 is only an initial filter. **The real final defense is Gate 8 at Stage 7
 
 Full specs, templates and real examples in [`references/citation-formats.md`](references/citation-formats.md).
 
-### SciPilot family
+### SciPilot Skills family
 
 | Skill | Status | Purpose |
 |---|---|---|
-| **scipilot-cite** | v1.0.0 (this repo) | Reference discovery and insertion |
-| scipilot-polish | Planned | Academic prose polishing |
-| scipilot-review | Planned | AI peer-review simulation |
-| scipilot-figure | Planned | Scientific figures |
-| scipilot-submit | Planned | Submission formatting |
-| scipilot-read | Planned | Paper reading and translation |
+| **scipilot-cite-skill** | v1.0.0 (this repo) | Reference discovery and insertion |
+| scipilot-polish-skill | Planned | Academic prose polishing |
+| scipilot-review-skill | Planned | AI peer-review simulation |
+| scipilot-figure-skill | Planned | Scientific figures |
+| scipilot-submit-skill | Planned | Submission formatting |
+| scipilot-read-skill | Planned | Paper reading and translation |
 
 All members share four design principles:
 1. **AI is a copilot** — wait for user sign-off at every decision point
